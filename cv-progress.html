@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Analysis in Progress</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        .overall-progress {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .overall-progress h3 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .overall-bar {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .overall-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.8s ease;
+            border-radius: 4px;
+        }
+
+        .overall-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .cv-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .cv-item:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-color: #667eea;
+        }
+
+        .cv-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .cv-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .status-queued {
+            background: #fed7e2;
+            color: #97266d;
+        }
+
+        .status-extracting {
+            background: #feebc8;
+            color: #c05621;
+        }
+
+        .status-analyzing {
+            background: #bee3f8;
+            color: #2a69ac;
+        }
+
+        .status-complete {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .progress-bar {
+            background: #e2e8f0;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.8s ease;
+            border-radius: 3px;
+        }
+
+        .progress-fill.queued {
+            background: #ed64a6;
+        }
+
+        .progress-fill.extracting {
+            background: #f6ad55;
+        }
+
+        .progress-fill.analyzing {
+            background: #4299e1;
+        }
+
+        .progress-fill.complete {
+            background: #48bb78;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: #718096;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .complete-message {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .complete-message h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .refresh-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-button:hover {
+            background: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Analyzing Your CVs</h1>
+            <p>Please wait while we process and evaluate your applications</p>
+        </div>
+
+        <div class="overall-progress">
+            <h3>Overall Progress</h3>
+            <div class="overall-bar">
+                <div class="overall-fill" id="overallFill"></div>
+            </div>
+            <div class="overall-text">
+                <span id="overallStatus">Initializing...</span>
+                <span id="overallPercent">0%</span>
+            </div>
+        </div>
+
+        <div id="cvList">
+            <!-- CV items will be dynamically added here -->
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            <strong>Connection Error:</strong> Unable to fetch progress updates. 
+            <button class="refresh-button" onclick="location.reload()">Retry</button>
+        </div>
+
+        <div class="complete-message" id="completeMessage">
+            <h3>✅ Analysis Complete!</h3>
+            <p>All CVs have been processed successfully. Check your email for qualified candidates!</p>
+        </div>
+    </div>
+
+    <script>
+        // Get session ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+
+        if (!sessionId) {
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorMessage').innerHTML = '<strong>Error:</strong> No session ID found. Please submit the form again.';
+        }
+
+        // Configuration - UPDATE THESE URLs
+        const PROGRESS_SHEET_URL = 'YOUR_GOOGLE_SHEETS_CSV_EXPORT_URL'; // You'll need to set this up
+        const POLLING_INTERVAL = 2000; // Check every 2 seconds
+
+        let cvData = {};
+        let totalCVs = 0;
+        let completedCVs = 0;
+
+        // Status mapping for display
+        const statusMap = {
+            'queued': 'Queued for Processing',
+            'extracting': 'Extracting Text',
+            'analyzing': 'Analyzing with AI',
+            'complete': 'Analysis Complete'
+        };
+
+        function updateProgress() {
+            // In a real implementation, this would fetch from your Google Sheets or API
+            // For now, I'll simulate the progress updates
+            
+            // This is where you'd make an HTTP request to fetch progress data
+            // fetch(`${PROGRESS_SHEET_URL}?session=${sessionId}`)
+            //     .then(response => response.json())
+            //     .then(data => processProgressData(data))
+            //     .catch(error => handleError(error));
+
+            // Simulation for demo purposes
+            simulateProgress();
+        }
+
+        function simulateProgress() {
+            // This simulates the CV processing - replace with real data fetching
+            if (!totalCVs) {
+                totalCVs = 2; // Based on your example with 2 CVs
+                initializeCVs(['cv_sarah_chen.pdf', 'james_cv.pdf']);
+            }
+
+            // Simulate progress updates
+            setTimeout(() => updateCVStatus('cv_sarah_chen.pdf', 'extracting', 33), 1000);
+            setTimeout(() => updateCVStatus('james_cv.pdf', 'extracting', 33), 1500);
+            setTimeout(() => updateCVStatus('cv_sarah_chen.pdf', 'analyzing', 66), 3000);
+            setTimeout(() => updateCVStatus('james_cv.pdf', 'analyzing', 66), 3500);
+            setTimeout(() => updateCVStatus('cv_sarah_chen.pdf', 'complete', 100), 5000);
+            setTimeout(() => updateCVStatus('james_cv.pdf', 'complete', 100), 5500);
+        }
+
+        function initializeCVs(cvNames) {
+            const cvList = document.getElementById('cvList');
+            cvList.innerHTML = '';
+
+            cvNames.forEach(cvName => {
+                cvData[cvName] = { status: 'queued', progress: 0 };
+                
+                const cvElement = document.createElement('div');
+                cvElement.className = 'cv-item';
+                cvElement.id = `cv-${cvName.replace(/[^a-zA-Z0-9]/g, '')}`;
+                
+                cvElement.innerHTML = `
+                    <div class="cv-header">
+                        <span class="cv-name">${cvName}</span>
+                        <span class="status-badge status-queued">Queued</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill queued" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span>Waiting to start...</span>
+                        <span>0%</span>
+                    </div>
+                `;
+                
+                cvList.appendChild(cvElement);
+            });
+
+            updateOverallProgress();
+        }
+
+        function updateCVStatus(cvName, status, progress) {
+            if (!cvData[cvName]) return;
+
+            cvData[cvName] = { status, progress };
+            
+            const cvElement = document.getElementById(`cv-${cvName.replace(/[^a-zA-Z0-9]/g, '')}`);
+            if (!cvElement) return;
+
+            // Update status badge
+            const statusBadge = cvElement.querySelector('.status-badge');
+            statusBadge.className = `status-badge status-${status}`;
+            statusBadge.textContent = statusMap[status] || status;
+            
+            if (status !== 'complete') {
+                statusBadge.innerHTML += '<span class="loading-spinner"></span>';
+            }
+
+            // Update progress bar
+            const progressFill = cvElement.querySelector('.progress-fill');
+            progressFill.className = `progress-fill ${status}`;
+            progressFill.style.width = `${progress}%`;
+
+            // Update progress text
+            const progressTextElements = cvElement.querySelectorAll('.progress-text span');
+            progressTextElements[0].textContent = statusMap[status] || status;
+            progressTextElements[1].textContent = `${progress}%`;
+
+            updateOverallProgress();
+        }
+
+        function updateOverallProgress() {
+            const totalProgress = Object.values(cvData).reduce((sum, cv) => sum + cv.progress, 0);
+            const overallPercent = totalCVs > 0 ? Math.round(totalProgress / totalCVs) : 0;
+            
+            completedCVs = Object.values(cvData).filter(cv => cv.status === 'complete').length;
+
+            document.getElementById('overallFill').style.width = `${overallPercent}%`;
+            document.getElementById('overallPercent').textContent = `${overallPercent}%`;
+            
+            if (completedCVs === totalCVs && totalCVs > 0) {
+                document.getElementById('overallStatus').textContent = 'All CVs processed successfully!';
+                document.getElementById('completeMessage').style.display = 'block';
+            } else {
+                document.getElementById('overallStatus').textContent = `Processing ${completedCVs}/${totalCVs} CVs...`;
+            }
+        }
+
+        function handleError(error) {
+            console.error('Error fetching progress:', error);
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        // Start polling for updates
+        updateProgress();
+        
+        // Set up real polling (uncomment when you have the backend ready)
+        // setInterval(updateProgress, POLLING_INTERVAL);
+    </script>
+</body>
+</html>
