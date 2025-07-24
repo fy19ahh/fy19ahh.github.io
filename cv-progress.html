@@ -286,7 +286,7 @@
         }
 
         // Configuration - UPDATE THESE URLs
-        const PROGRESS_SHEET_URL = 'YOUR_GOOGLE_SHEETS_CSV_EXPORT_URL'; // You'll need to set this up
+        const PROGRESS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1jnvFDT7p1J2wrL3VndyzanmMZRkddomi6UuN1t9w60M/export?format=csv';
         const POLLING_INTERVAL = 2000; // Check every 2 seconds
 
         let cvData = {};
@@ -302,17 +302,45 @@
         };
 
         function updateProgress() {
-            // In a real implementation, this would fetch from your Google Sheets or API
-            // For now, I'll simulate the progress updates
+            if (!sessionId) return;
             
-            // This is where you'd make an HTTP request to fetch progress data
-            // fetch(`${PROGRESS_SHEET_URL}?session=${sessionId}`)
-            //     .then(response => response.json())
-            //     .then(data => processProgressData(data))
-            //     .catch(error => handleError(error));
-
-            // Simulation for demo purposes
-            simulateProgress();
+            fetch(`${PROGRESS_SHEET_URL}`)
+                .then(response => response.text())
+                .then(csvData => {
+                    const rows = csvData.split('\n').slice(1); // Skip header
+                    const sessionData = rows
+                        .map(row => {
+                            const [session, cvName, status, progress, timestamp] = row.split(',');
+                            return { session, cvName, status, progress: parseInt(progress), timestamp };
+                        })
+                        .filter(row => row.session === sessionId);
+                    
+                    processProgressData(sessionData);
+                })
+                .catch(error => {
+                    console.error('Error fetching progress:', error);
+                    handleError(error);
+                });
+        }
+        
+        function processProgressData(data) {
+            if (data.length === 0 && !totalCVs) {
+                // No data yet, keep checking
+                setTimeout(updateProgress, 2000);
+                return;
+            }
+            
+            // Initialize CVs if not done yet
+            if (!totalCVs && data.length > 0) {
+                const uniqueCVs = [...new Set(data.map(d => d.cvName))];
+                totalCVs = uniqueCVs.length;
+                initializeCVs(uniqueCVs);
+            }
+            
+            // Update each CV's progress
+            data.forEach(item => {
+                updateCVStatus(item.cvName, item.status, item.progress);
+            });
         }
 
         function simulateProgress() {
