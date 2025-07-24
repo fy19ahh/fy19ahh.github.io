@@ -496,12 +496,12 @@
                 updateCVStatus(cv.cvName, cv.status, cv.progress);
             });
 
-            // Check if all complete - but only count CVs we actually have data for
-            const cvsWithData = Object.keys(cvProgress);
-            const completedCVs = Object.values(cvProgress).filter(cv => cv.status === 'complete');
-            const allComplete = cvsWithData.length >= totalCVs && completedCVs.length === totalCVs;
+            // Check if all complete - use cvData (which has all initialized CVs) instead of cvProgress
+            const completedCount = Object.values(cvData).filter(cv => cv.status === 'complete').length;
+            const allComplete = completedCount === totalCVs && totalCVs > 0;
             
-            console.log(`Completion check: ${completedCVs.length}/${totalCVs} CVs complete, ${cvsWithData.length} CVs have data`);
+            console.log(`Completion check: ${completedCount}/${totalCVs} CVs complete (using cvData)`);
+            console.log('cvData status check:', Object.keys(cvData).map(name => ({ name, status: cvData[name].status })));
             
             if (allComplete && pollingInterval) {
                 console.log('All CVs complete, stopping polling');
@@ -578,21 +578,27 @@
         }
 
         function updateOverallProgress() {
+            // Calculate progress based on all initialized CVs, not just those with data
             const totalProgress = Object.values(cvData).reduce((sum, cv) => sum + cv.progress, 0);
             const overallPercent = totalCVs > 0 ? Math.round(totalProgress / totalCVs) : 0;
             
-            completedCVs = Object.values(cvData).filter(cv => cv.status === 'complete').length;
+            // Count completed CVs from cvData (which includes all initialized CVs)
+            const completedCount = Object.values(cvData).filter(cv => cv.status === 'complete').length;
+            
+            console.log(`Overall progress: ${completedCount}/${totalCVs} completed, ${overallPercent}% total progress`);
+            console.log('cvData:', cvData);
 
             document.getElementById('overallFill').style.width = `${overallPercent}%`;
             document.getElementById('overallPercent').textContent = `${overallPercent}%`;
             
-            if (completedCVs === totalCVs && totalCVs > 0) {
+            // Only show complete when ALL CVs are actually complete
+            if (completedCount === totalCVs && totalCVs > 0) {
                 document.getElementById('overallStatus').textContent = 'All CVs processed successfully!';
                 document.getElementById('completeMessage').style.display = 'block';
                 // Hide debug info when complete
                 document.getElementById('debugInfo').style.display = 'none';
             } else {
-                document.getElementById('overallStatus').textContent = `Processing ${completedCVs}/${totalCVs} CVs...`;
+                document.getElementById('overallStatus').textContent = `Processing ${completedCount}/${totalCVs} CVs...`;
             }
         }
 
