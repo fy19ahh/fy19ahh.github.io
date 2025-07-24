@@ -341,16 +341,16 @@
         function processCSVData(csvData) {
             if (!csvData || csvData.trim() === '') {
                 console.log('No CSV data received');
-                document.getElementById('debugText').innerHTML = `Session: ${sessionId}<br>Waiting for data...`;
-                document.getElementById('debugInfo').style.display = 'block';
+                // Keep debug info hidden
+                document.getElementById('debugInfo').style.display = 'none';
                 return;
             }
 
             const lines = csvData.trim().split('\n');
             if (lines.length <= 1) {
                 console.log('Only header row in CSV');
-                document.getElementById('debugText').innerHTML = `Session: ${sessionId}<br>Sheet exists but no data yet...`;
-                document.getElementById('debugInfo').style.display = 'block';
+                // Keep debug info hidden  
+                document.getElementById('debugInfo').style.display = 'none';
                 return;
             }
 
@@ -406,6 +406,8 @@
 
             if (sessionData.length === 0) {
                 console.log('No data for current session');
+                // Keep debug info hidden
+                document.getElementById('debugInfo').style.display = 'none';
                 return;
             }
 
