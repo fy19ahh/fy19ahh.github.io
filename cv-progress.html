@@ -240,6 +240,16 @@
         .refresh-button:hover {
             background: #5a67d8;
         }
+
+        .debug-info {
+            background: #f0f8ff;
+            border: 1px solid #d0e7ff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -273,6 +283,11 @@
             <h3>✅ Analysis Complete!</h3>
             <p>All CVs have been processed successfully. Check your email for qualified candidates!</p>
         </div>
+
+        <div class="debug-info" id="debugInfo" style="display: none;">
+            <strong>Debug Info:</strong><br>
+            <span id="debugText"></span>
+        </div>
     </div>
 
     <script>
@@ -280,18 +295,14 @@
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session');
 
-        if (!sessionId) {
-            document.getElementById('errorMessage').style.display = 'block';
-            document.getElementById('errorMessage').innerHTML = '<strong>Error:</strong> No session ID found. Please submit the form again.';
-        }
-
-        // Configuration - UPDATE THESE URLs
+        // Configuration
         const PROGRESS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1AWx_P1uEE6KnRi4SbiNV60t5cMsVz_Ec91j-xsBgKxM/export?format=csv';
-        const POLLING_INTERVAL = 2000; // Check every 2 seconds
+        const POLLING_INTERVAL = 3000; // Check every 3 seconds
 
         let cvData = {};
         let totalCVs = 0;
         let completedCVs = 0;
+        let pollingInterval = null;
 
         // Status mapping for display
         const statusMap = {
@@ -302,61 +313,132 @@
         };
 
         function updateProgress() {
-            if (!sessionId) return;
+            console.log('Fetching progress for session:', sessionId);
             
-            fetch(`${PROGRESS_SHEET_URL}`)
-                .then(response => response.text())
+            if (!sessionId) {
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorMessage').innerHTML = '<strong>Error:</strong> No session ID found. Please submit the form again.';
+                return;
+            }
+            
+            fetch(PROGRESS_SHEET_URL)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.text();
+                })
                 .then(csvData => {
-                    const rows = csvData.split('\n').slice(1); // Skip header
-                    const sessionData = rows
-                        .map(row => {
-                            const [session, cvName, status, progress, timestamp] = row.split(',');
-                            return { session, cvName, status, progress: parseInt(progress), timestamp };
-                        })
-                        .filter(row => row.session === sessionId);
-                    
-                    processProgressData(sessionData);
+                    console.log('Raw CSV data:', csvData);
+                    processCSVData(csvData);
                 })
                 .catch(error => {
                     console.error('Error fetching progress:', error);
                     handleError(error);
                 });
         }
-        
-        function processProgressData(data) {
-            if (data.length === 0 && !totalCVs) {
-                // No data yet, keep checking
-                setTimeout(updateProgress, 2000);
+
+        function processCSVData(csvData) {
+            if (!csvData || csvData.trim() === '') {
+                console.log('No CSV data received');
+                document.getElementById('debugText').innerHTML = `Session: ${sessionId}<br>No data in CSV yet`;
+                document.getElementById('debugInfo').style.display = 'block';
                 return;
             }
-            
+
+            const lines = csvData.trim().split('\n');
+            if (lines.length <= 1) {
+                console.log('Only header row in CSV');
+                document.getElementById('debugText').innerHTML = `Session: ${sessionId}<br>Only header row found`;
+                document.getElementById('debugInfo').style.display = 'block';
+                return;
+            }
+
+            // Parse CSV data (skip header row)
+            const dataRows = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                // Handle CSV parsing with potential commas in values
+                const cols = [];
+                let currentCol = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        cols.push(currentCol.replace(/"/g, ''));
+                        currentCol = '';
+                    } else {
+                        currentCol += char;
+                    }
+                }
+                cols.push(currentCol.replace(/"/g, ''));
+                
+                if (cols.length >= 4) {
+                    dataRows.push({
+                        sessionId: cols[0] || '',
+                        cvName: cols[1] || '',
+                        status: cols[2] || '',
+                        progress: parseInt(cols[3]) || 0,
+                        timestamp: cols[4] || ''
+                    });
+                }
+            }
+
+            console.log('Parsed data rows:', dataRows);
+
+            // Filter for current session
+            const sessionData = dataRows.filter(row => row.sessionId === sessionId);
+            console.log('Filtered session data:', sessionData);
+
+            document.getElementById('debugText').innerHTML = `
+                Session: ${sessionId}<br>
+                Total rows: ${dataRows.length}<br>
+                Session rows: ${sessionData.length}<br>
+                CVs found: ${[...new Set(sessionData.map(r => r.cvName))].join(', ')}
+            `;
+            document.getElementById('debugInfo').style.display = 'block';
+
+            if (sessionData.length === 0) {
+                console.log('No data for current session');
+                return;
+            }
+
+            // Get latest status for each CV (in case there are multiple entries)
+            const cvProgress = {};
+            sessionData.forEach(row => {
+                if (!cvProgress[row.cvName] || 
+                    (row.timestamp && cvProgress[row.cvName].timestamp && row.timestamp > cvProgress[row.cvName].timestamp) ||
+                    (!cvProgress[row.cvName].timestamp)) {
+                    cvProgress[row.cvName] = row;
+                }
+            });
+
+            console.log('CV Progress map:', cvProgress);
+
             // Initialize CVs if not done yet
-            if (!totalCVs && data.length > 0) {
-                const uniqueCVs = [...new Set(data.map(d => d.cvName))];
+            if (!totalCVs) {
+                const uniqueCVs = Object.keys(cvProgress);
                 totalCVs = uniqueCVs.length;
+                console.log('Initializing CVs:', uniqueCVs);
                 initializeCVs(uniqueCVs);
             }
-            
+
             // Update each CV's progress
-            data.forEach(item => {
-                updateCVStatus(item.cvName, item.status, item.progress);
+            Object.values(cvProgress).forEach(cv => {
+                console.log('Updating CV:', cv.cvName, cv.status, cv.progress);
+                updateCVStatus(cv.cvName, cv.status, cv.progress);
             });
-        }
 
-        function simulateProgress() {
-            // This simulates the CV processing - replace with real data fetching
-            if (!totalCVs) {
-                totalCVs = 2; // Based on your example with 2 CVs
-                initializeCVs(['cv_sarah_chen.pdf', 'james_cv.pdf']);
+            // Check if all complete and stop polling
+            const allComplete = Object.values(cvProgress).every(cv => cv.status === 'complete');
+            if (allComplete && pollingInterval) {
+                console.log('All CVs complete, stopping polling');
+                clearInterval(pollingInterval);
+                pollingInterval = null;
             }
-
-            // Simulate progress updates
-            setTimeout(() => updateCVStatus('cv_sarah_chen.pdf', 'extracting', 33), 1000);
-            setTimeout(() => updateCVStatus('james_cv.pdf', 'extracting', 33), 1500);
-            setTimeout(() => updateCVStatus('cv_sarah_chen.pdf', 'analyzing', 66), 3000);
-            setTimeout(() => updateCVStatus('james_cv.pdf', 'analyzing', 66), 3500);
-            setTimeout(() => updateCVStatus('cv_sarah_chen.pdf', 'complete', 100), 5000);
-            setTimeout(() => updateCVStatus('james_cv.pdf', 'complete', 100), 5500);
         }
 
         function initializeCVs(cvNames) {
@@ -391,12 +473,18 @@
         }
 
         function updateCVStatus(cvName, status, progress) {
-            if (!cvData[cvName]) return;
+            if (!cvData[cvName]) {
+                console.log('CV not in cvData, initializing:', cvName);
+                cvData[cvName] = { status: 'queued', progress: 0 };
+            }
 
             cvData[cvName] = { status, progress };
             
             const cvElement = document.getElementById(`cv-${cvName.replace(/[^a-zA-Z0-9]/g, '')}`);
-            if (!cvElement) return;
+            if (!cvElement) {
+                console.log('CV element not found:', cvName);
+                return;
+            }
 
             // Update status badge
             const statusBadge = cvElement.querySelector('.status-badge');
@@ -432,6 +520,8 @@
             if (completedCVs === totalCVs && totalCVs > 0) {
                 document.getElementById('overallStatus').textContent = 'All CVs processed successfully!';
                 document.getElementById('completeMessage').style.display = 'block';
+                // Hide debug info when complete
+                document.getElementById('debugInfo').style.display = 'none';
             } else {
                 document.getElementById('overallStatus').textContent = `Processing ${completedCVs}/${totalCVs} CVs...`;
             }
@@ -443,10 +533,14 @@
         }
 
         // Start polling for updates
-        updateProgress();
-        
-        // Set up real polling (uncomment when you have the backend ready)
-        // setInterval(updateProgress, POLLING_INTERVAL);
+        if (sessionId) {
+            console.log('Starting progress tracking for session:', sessionId);
+            updateProgress(); // Initial call
+            pollingInterval = setInterval(updateProgress, POLLING_INTERVAL);
+        } else {
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorMessage').innerHTML = '<strong>Error:</strong> No session ID found. Please submit the form again.';
+        }
     </script>
 </body>
 </html>
