@@ -630,13 +630,10 @@
                 console.log('🎉 ALL CVS COMPLETE! Showing completion message');
                 document.getElementById('overallStatus').textContent = 'All CVs processed successfully!';
                 document.getElementById('completeMessage').style.display = 'block';
-                // Always hide debug info
-                document.getElementById('debugInfo').style.display = 'none';
             } else {
                 console.log(`❌ Not all complete: ${completedCount}/${totalCVs} done, ${cvsInCvData} in cvData`);
                 document.getElementById('overallStatus').textContent = `Processing ${completedCount}/${totalCVs} CVs...`;
-                // Always hide debug info in production
-                document.getElementById('debugInfo').style.display = 'none';
+                document.getElementById('completeMessage').style.display = 'none';
             }
         }
 
