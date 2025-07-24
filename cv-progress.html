@@ -12,34 +12,29 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ab52c5;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #333;
+            color: #1a1a1a;
+            padding: 1rem;
         }
 
         .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             max-width: 600px;
-            width: 90%;
-            position: relative;
-            overflow: hidden;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            display: none;
         }
 
         .header {
@@ -48,28 +43,31 @@
         }
 
         .header h1 {
-            color: #2d3748;
-            font-size: 1.8rem;
+            color: #1a1a1a;
+            font-size: 1.75rem;
+            font-weight: 600;
             margin-bottom: 0.5rem;
         }
 
         .header p {
-            color: #718096;
-            font-size: 1rem;
+            color: #6b7280;
+            font-size: 0.95rem;
+            font-weight: 400;
         }
 
         .overall-progress {
-            background: #f7fafc;
+            background: #f8fafc;
             padding: 1.5rem;
             border-radius: 12px;
             margin-bottom: 2rem;
-            border-left: 4px solid #667eea;
+            border: 1px solid #e2e8f0;
         }
 
         .overall-progress h3 {
-            color: #2d3748;
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
+            color: #1a1a1a;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
         }
 
         .overall-bar {
@@ -83,7 +81,7 @@
         .overall-fill {
             background: linear-gradient(90deg, #667eea, #764ba2);
             height: 100%;
-            transition: width 0.8s ease;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother, slower transition */
             border-radius: 4px;
         }
 
@@ -96,17 +94,16 @@
 
         .cv-item {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #e5e7eb;
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            transition: all 0.3s ease;
-            position: relative;
+            transition: all 0.2s ease;
         }
 
         .cv-item:hover {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #d1d5db;
         }
 
         .cv-header {
@@ -118,83 +115,84 @@
 
         .cv-name {
             font-weight: 600;
-            color: #2d3748;
-            font-size: 1rem;
+            color: #1a1a1a;
+            font-size: 0.95rem;
         }
 
         .status-badge {
             padding: 0.25rem 0.75rem;
-            border-radius: 20px;
+            border-radius: 6px;
             font-size: 0.8rem;
             font-weight: 500;
             text-transform: capitalize;
         }
 
         .status-queued {
-            background: #fed7e2;
-            color: #97266d;
+            background: #f3f4f6;
+            color: #6b7280;
         }
 
         .status-extracting {
-            background: #feebc8;
-            color: #c05621;
+            background: #fef3c7;
+            color: #92400e;
         }
 
         .status-analyzing {
-            background: #bee3f8;
-            color: #2a69ac;
+            background: #dbeafe;
+            color: #1e40af;
         }
 
         .status-complete {
-            background: #c6f6d5;
-            color: #22543d;
+            background: #d1fae5;
+            color: #065f46;
         }
 
         .progress-bar {
-            background: #e2e8f0;
-            height: 6px;
-            border-radius: 3px;
+            background: #f3f4f6;
+            height: 4px;
+            border-radius: 2px;
             overflow: hidden;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
         .progress-fill {
             height: 100%;
-            transition: width 0.8s ease;
-            border-radius: 3px;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
         }
 
         .progress-fill.queued {
-            background: #ed64a6;
+            background: #9ca3af;
         }
 
         .progress-fill.extracting {
-            background: #f6ad55;
+            background: #f59e0b;
         }
 
         .progress-fill.analyzing {
-            background: #4299e1;
+            background: #3b82f6;
         }
 
         .progress-fill.complete {
-            background: #48bb78;
+            background: #10b981;
         }
 
         .progress-text {
-            font-size: 0.85rem;
-            color: #718096;
+            font-size: 0.8rem;
+            color: #6b7280;
             display: flex;
             justify-content: space-between;
+            font-weight: 500;
         }
 
         .loading-spinner {
             display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #e2e8f0;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #e5e7eb;
             border-radius: 50%;
-            border-top-color: #667eea;
-            animation: spin 1s ease-in-out infinite;
+            border-top-color: #ab52c5;
+            animation: spin 1s linear infinite;
             margin-left: 0.5rem;
         }
 
@@ -203,22 +201,24 @@
         }
 
         .complete-message {
-            background: linear-gradient(135deg, #48bb78, #38a169);
+            background: #ab52c5;
             color: white;
             padding: 1.5rem;
             border-radius: 12px;
             text-align: center;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             display: none;
         }
 
         .complete-message h3 {
             margin-bottom: 0.5rem;
+            font-weight: 600;
         }
 
         .error-message {
-            background: #fed7d7;
-            color: #c53030;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
             padding: 1rem;
             border-radius: 8px;
             margin: 1rem 0;
@@ -226,29 +226,31 @@
         }
 
         .refresh-button {
-            background: #667eea;
+            background: #ab52c5;
             color: white;
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
+            font-weight: 500;
             margin-top: 1rem;
-            transition: background 0.3s ease;
+            transition: background 0.2s ease;
         }
 
         .refresh-button:hover {
-            background: #5a67d8;
+            background: #9333ea;
         }
 
         .debug-info {
-            background: #f0f8ff;
-            border: 1px solid #d0e7ff;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             padding: 1rem;
             border-radius: 8px;
             margin-top: 1rem;
             font-size: 0.8rem;
-            color: #333;
+            color: #374151;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
         }
     </style>
 </head>
@@ -480,14 +482,18 @@
                 });
             }
 
-            // Update debug info
+            // Update debug info with more details
             document.getElementById('debugText').innerHTML = `
                 Session: ${sessionId}<br>
                 Total rows: ${dataRows.length}<br>
                 Session rows: ${sessionData.length}<br>
                 CVs initialized: ${totalCVs}<br>
                 CVs in progress: ${Object.keys(cvProgress).length}<br>
-                CVs found: ${Array.from(allCVsEverSeen).join(', ')}
+                CVs found: ${Array.from(allCVsEverSeen).join(', ')}<br>
+                <br><strong>Raw session data:</strong><br>
+                ${sessionData.map(row => `${row.cvName}: ${row.status} (${row.progress}%)`).join('<br>')}
+                <br><br><strong>Current cvData:</strong><br>
+                ${Object.keys(cvData).map(name => `${name}: ${cvData[name].status} (${cvData[name].progress}%)`).join('<br>')}
             `;
 
             // Update each CV's progress
@@ -585,6 +591,8 @@
             updateOverallProgress();
         }
 
+        let lastOverallPercent = -1; // Track the last overall percentage to avoid unnecessary updates
+        
         function updateOverallProgress() {
             // Calculate progress based on all initialized CVs, not just those with data
             const totalProgress = Object.values(cvData).reduce((sum, cv) => sum + cv.progress, 0);
@@ -606,8 +614,12 @@
             })));
             console.log(`================================`);
 
-            document.getElementById('overallFill').style.width = `${overallPercent}%`;
-            document.getElementById('overallPercent').textContent = `${overallPercent}%`;
+            // Only update the progress bar if the percentage actually changed
+            if (overallPercent !== lastOverallPercent) {
+                document.getElementById('overallFill').style.width = `${overallPercent}%`;
+                document.getElementById('overallPercent').textContent = `${overallPercent}%`;
+                lastOverallPercent = overallPercent;
+            }
             
             // STRICT completion check: ALL CVs must be complete AND we must have the expected total
             const allCVsComplete = completedCount === totalCVs && cvsInCvData === totalCVs && totalCVs > 0;
