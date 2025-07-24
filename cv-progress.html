@@ -297,7 +297,7 @@
 
         // Configuration
         const PROGRESS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1AWx_P1uEE6KnRi4SbiNV60t5cMsVz_Ec91j-xsBgKxM/export?format=csv';
-        const POLLING_INTERVAL = 500; // Check every 500ms (much faster!)
+        const POLLING_INTERVAL = 250; // Check every 250ms (very fast!)
 
         let cvData = {};
         let totalCVs = 0;
@@ -382,7 +382,8 @@
                         cvName: cols[1] || '',
                         status: cols[2] || '',
                         progress: parseInt(cols[3]) || 0,
-                        timestamp: cols[4] || ''
+                        timestamp: cols[4] || '',
+                        rowIndex: i // Keep track of row order
                     });
                 }
             }
@@ -406,17 +407,17 @@
                 return;
             }
 
-            // Get latest status for each CV (in case there are multiple entries)
+            // Get latest status for each CV based on row order (most recent = highest rowIndex)
             const cvProgress = {};
-            sessionData.forEach(row => {
-                if (!cvProgress[row.cvName] || 
-                    (row.timestamp && cvProgress[row.cvName].timestamp && row.timestamp > cvProgress[row.cvName].timestamp) ||
-                    (!cvProgress[row.cvName].timestamp)) {
-                    cvProgress[row.cvName] = row;
-                }
-            });
+            sessionData
+                .sort((a, b) => b.rowIndex - a.rowIndex) // Sort by row index descending (newest first)
+                .forEach(row => {
+                    if (!cvProgress[row.cvName]) {
+                        cvProgress[row.cvName] = row; // Take the first (newest) entry for each CV
+                    }
+                });
 
-            console.log('CV Progress map:', cvProgress);
+            console.log('CV Progress map (latest status):', cvProgress);
 
             // Initialize CVs if not done yet
             if (!totalCVs) {
@@ -424,14 +425,6 @@
                 totalCVs = uniqueCVs.length;
                 console.log('Initializing CVs:', uniqueCVs);
                 initializeCVs(uniqueCVs);
-                
-                // If we're finding CVs that are already complete, show a quick animation
-                const hasCompleteCV = Object.values(cvProgress).some(cv => cv.status === 'complete');
-                if (hasCompleteCV) {
-                    console.log('Found completed CVs, running quick animation');
-                    animateQuickProgress(cvProgress);
-                    return;
-                }
             }
 
             // Update each CV's progress
@@ -447,27 +440,6 @@
                 clearInterval(pollingInterval);
                 pollingInterval = null;
             }
-        }
-
-        function animateQuickProgress(cvProgress) {
-            // Quick animation to show the progression even if we missed it
-            Object.keys(cvProgress).forEach((cvName, index) => {
-                const finalCV = cvProgress[cvName];
-                
-                // Show progression: queued -> extracting -> analyzing -> complete
-                setTimeout(() => updateCVStatus(cvName, 'queued', 0), index * 200);
-                setTimeout(() => updateCVStatus(cvName, 'extracting', 33), index * 200 + 500);
-                setTimeout(() => updateCVStatus(cvName, 'analyzing', 66), index * 200 + 1000);
-                setTimeout(() => updateCVStatus(cvName, finalCV.status, finalCV.progress), index * 200 + 1500);
-            });
-            
-            // Stop polling after animation
-            setTimeout(() => {
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                    pollingInterval = null;
-                }
-            }, Object.keys(cvProgress).length * 200 + 2000);
         }
 
         function initializeCVs(cvNames) {
