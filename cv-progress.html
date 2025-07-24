@@ -409,23 +409,86 @@
 
             // Get latest status for each CV based on row order (most recent = highest rowIndex)
             const cvProgress = {};
+            const allCVsEverSeen = new Set(); // Track ALL CVs we've ever seen
+            
             sessionData
-                .sort((a, b) => b.rowIndex - a.rowIndex) // Sort by row index descending (newest first)
+                .sort((a, b) => a.rowIndex - b.rowIndex) // Sort by row index ascending (oldest first)
                 .forEach(row => {
-                    if (!cvProgress[row.cvName]) {
-                        cvProgress[row.cvName] = row; // Take the first (newest) entry for each CV
-                    }
+                    allCVsEverSeen.add(row.cvName); // Add to our set of all CVs
+                    cvProgress[row.cvName] = row; // This will keep the latest (last) entry for each CV
                 });
 
+            console.log('All CVs ever seen:', Array.from(allCVsEverSeen));
             console.log('CV Progress map (latest status):', cvProgress);
 
-            // Initialize CVs if not done yet
+            // Initialize CVs if not done yet - use all CVs we've seen, not just current progress
             if (!totalCVs) {
-                const uniqueCVs = Object.keys(cvProgress);
+                const uniqueCVs = Array.from(allCVsEverSeen);
                 totalCVs = uniqueCVs.length;
                 console.log('Initializing CVs:', uniqueCVs);
                 initializeCVs(uniqueCVs);
+                
+                // Initialize any CVs that don't have progress data yet as "queued"
+                uniqueCVs.forEach(cvName => {
+                    if (!cvProgress[cvName]) {
+                        cvProgress[cvName] = {
+                            cvName: cvName,
+                            status: 'queued',
+                            progress: 0
+                        };
+                    }
+                });
+            } else {
+                // If we already initialized but found new CVs, add them
+                allCVsEverSeen.forEach(cvName => {
+                    if (!cvData[cvName]) {
+                        console.log('Found new CV:', cvName);
+                        totalCVs++;
+                        
+                        // Add the new CV to the display
+                        const cvList = document.getElementById('cvList');
+                        const cvElement = document.createElement('div');
+                        cvElement.className = 'cv-item';
+                        cvElement.id = `cv-${cvName.replace(/[^a-zA-Z0-9]/g, '')}`;
+                        
+                        cvElement.innerHTML = `
+                            <div class="cv-header">
+                                <span class="cv-name">${cvName}</span>
+                                <span class="status-badge status-queued">Queued</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill queued" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span>Waiting to start...</span>
+                                <span>0%</span>
+                            </div>
+                        `;
+                        
+                        cvList.appendChild(cvElement);
+                        cvData[cvName] = { status: 'queued', progress: 0 };
+                        
+                        // Add to progress if not already there
+                        if (!cvProgress[cvName]) {
+                            cvProgress[cvName] = {
+                                cvName: cvName,
+                                status: 'queued',
+                                progress: 0
+                            };
+                        }
+                    }
+                });
             }
+
+            // Update debug info
+            document.getElementById('debugText').innerHTML = `
+                Session: ${sessionId}<br>
+                Total rows: ${dataRows.length}<br>
+                Session rows: ${sessionData.length}<br>
+                CVs initialized: ${totalCVs}<br>
+                CVs in progress: ${Object.keys(cvProgress).length}<br>
+                CVs found: ${Array.from(allCVsEverSeen).join(', ')}
+            `;
 
             // Update each CV's progress
             Object.values(cvProgress).forEach(cv => {
@@ -433,8 +496,13 @@
                 updateCVStatus(cv.cvName, cv.status, cv.progress);
             });
 
-            // Check if all complete and stop polling
-            const allComplete = Object.values(cvProgress).every(cv => cv.status === 'complete');
+            // Check if all complete - but only count CVs we actually have data for
+            const cvsWithData = Object.keys(cvProgress);
+            const completedCVs = Object.values(cvProgress).filter(cv => cv.status === 'complete');
+            const allComplete = cvsWithData.length >= totalCVs && completedCVs.length === totalCVs;
+            
+            console.log(`Completion check: ${completedCVs.length}/${totalCVs} CVs complete, ${cvsWithData.length} CVs have data`);
+            
             if (allComplete && pollingInterval) {
                 console.log('All CVs complete, stopping polling');
                 clearInterval(pollingInterval);
